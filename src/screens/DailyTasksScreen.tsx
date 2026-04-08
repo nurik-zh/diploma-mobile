@@ -1,0 +1,156 @@
+import React, { useCallback, useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { ScreenScaffold } from '../components/ScreenScaffold';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { getTodayTasks, submitDailyTask } from '../api/services';
+import type { DailyTask } from '../api/types';
+import type { ProfileStackParamList } from '../navigation/types';
+import { colors, radius, spacing } from '../theme';
+
+type Props = NativeStackScreenProps<ProfileStackParamList, 'DailyTasks'>;
+
+type QuizQ = {
+  id?: string;
+  question?: string;
+  options?: { id: string; label: string }[];
+  correctOptionId?: string;
+};
+
+export function DailyTasksScreen({ navigation }: Props) {
+  const [tasks, setTasks] = useState<DailyTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const t = await getTodayTasks();
+      setTasks(t);
+    } catch {
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      load();
+    }, [load])
+  );
+
+  async function submit(task: DailyTask) {
+    setMsg(null);
+    const quiz = task.quizData as { questions?: QuizQ[] } | null;
+    const q0 = quiz?.questions?.[0];
+    const optionId = picked[task.id];
+    if (!q0 || !optionId) {
+      setMsg('Выберите вариант');
+      return;
+    }
+    try {
+      await submitDailyTask(task.id, optionId);
+      await load();
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Ошибка');
+    }
+  }
+
+  return (
+    <ScreenScaffold title="Квесты дня" loading={loading}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {tasks.length === 0 ? (
+          <Text style={styles.muted}>На сегодня нет заданий</Text>
+        ) : (
+          tasks.map((task) => {
+            const quiz = task.quizData as { questions?: QuizQ[] } | null;
+            const q0 = quiz?.questions?.[0];
+            const done = task.completed;
+            return (
+              <View key={task.id} style={styles.card}>
+                <Text style={styles.roadmap}>{task.roadmapTitle}</Text>
+                <Text style={styles.node}>{task.nodeTitle}</Text>
+                <Text style={styles.desc}>{task.description}</Text>
+                <Text style={styles.points}>+{task.points} очков</Text>
+
+                {done ? (
+                  <Text style={styles.done}>Выполнено ✓</Text>
+                ) : q0 ? (
+                  <>
+                    <Text style={styles.q}>{q0.question}</Text>
+                    {(q0.options ?? []).map((o) => {
+                      const sel = picked[task.id] === o.id;
+                      return (
+                        <Pressable
+                          key={o.id}
+                          style={[styles.opt, sel && styles.optSel]}
+                          onPress={() =>
+                            setPicked((p) => ({ ...p, [task.id]: o.id }))
+                          }
+                        >
+                          <Text style={styles.optText}>{o.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                    <PrimaryButton
+                      label="Ответить"
+                      onPress={() => submit(task)}
+                      disabled={!picked[task.id]}
+                      style={{ marginTop: spacing.md }}
+                    />
+                  </>
+                ) : (
+                  <Text style={styles.muted}>Нет вопросов (AI)</Text>
+                )}
+              </View>
+            );
+          })
+        )}
+        {msg ? <Text style={styles.err}>{msg}</Text> : null}
+        <PrimaryButton
+          label="Назад"
+          variant="outline"
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: spacing.lg }}
+        />
+      </ScrollView>
+    </ScreenScaffold>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  card: {
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  roadmap: { color: colors.accent, fontWeight: '700' },
+  node: { color: colors.text, fontSize: 16, fontWeight: '600', marginTop: 4 },
+  desc: { color: colors.textMuted, marginTop: spacing.sm },
+  points: { color: colors.success, marginTop: spacing.sm, fontWeight: '600' },
+  done: { color: colors.success, marginTop: spacing.md, fontWeight: '700' },
+  q: { color: colors.text, marginTop: spacing.md, fontWeight: '600' },
+  opt: {
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginTop: spacing.xs,
+  },
+  optSel: { borderWidth: 1, borderColor: colors.accent },
+  optText: { color: colors.text },
+  muted: { color: colors.textMuted },
+  err: { color: colors.danger, marginTop: spacing.md },
+});
