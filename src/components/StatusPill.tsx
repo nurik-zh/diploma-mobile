@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export type RoadmapNodeStatus = 'locked' | 'not_started' | 'in_progress' | 'completed';
 
@@ -19,6 +20,8 @@ function labelFor(status: RoadmapNodeStatus): string {
 }
 
 export function StatusPill({ status }: { status: RoadmapNodeStatus }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const isLocked = status === 'locked';
   const isDone = status === 'completed';
   const isActive = status === 'in_progress';
@@ -44,7 +47,7 @@ export function StatusPill({ status }: { status: RoadmapNodeStatus }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   pill: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,

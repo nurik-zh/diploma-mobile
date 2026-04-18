@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -15,7 +15,8 @@ import {
   submitTopicResult,
 } from '../api/services';
 import type { RoadmapsStackParamList } from '../navigation/types';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'Topic'>;
 
@@ -27,6 +28,8 @@ type Q = {
 };
 
 export function TopicScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { topicId, title } = route.params;
   const [theory, setTheory] = useState('');
   const [questions, setQuestions] = useState<Q[]>([]);
@@ -34,9 +37,11 @@ export function TopicScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiPreparing, setAiPreparing] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
+    setAiPreparing(true);
     try {
       const content = await getTopicContent(topicId);
       const first = content[0];
@@ -48,6 +53,7 @@ export function TopicScreen({ route, navigation }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка загрузки');
     } finally {
+      setAiPreparing(false);
       setLoading(false);
     }
   }, [topicId]);
@@ -73,12 +79,15 @@ export function TopicScreen({ route, navigation }: Props) {
 
   async function submit() {
     setError(null);
+    setAiPreparing(true);
     try {
       const pct = scorePercent();
       await submitTopicResult(topicId, pct);
       setSubmitted(pct);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
+    } finally {
+      setAiPreparing(false);
     }
   }
 
@@ -89,6 +98,7 @@ export function TopicScreen({ route, navigation }: Props) {
         <Text style={styles.theory}>{theory || '—'}</Text>
 
         <Text style={styles.h2}>Тест</Text>
+        {aiPreparing ? <Text style={styles.info}>ИИ готовит, это может занять немного времени...</Text> : null}
         {questions.length === 0 ? (
           <Text style={styles.muted}>Вопросы пока не сгенерированы</Text>
         ) : (
@@ -142,7 +152,7 @@ export function TopicScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
   h2: {
     color: colors.textMuted,
@@ -173,4 +183,5 @@ const styles = StyleSheet.create({
   optText: { color: colors.text },
   result: { color: colors.success, marginVertical: spacing.md, fontWeight: '600' },
   err: { color: colors.danger, marginVertical: spacing.sm },
+  info: { color: colors.textMuted, marginBottom: spacing.sm },
 });

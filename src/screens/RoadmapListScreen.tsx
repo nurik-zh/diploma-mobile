@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -21,13 +21,17 @@ import type { Roadmap, RoadmapTree } from '../api/types';
 import type { RoadmapsStackParamList } from '../navigation/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<RoadmapsStackParamList, 'RoadmapList'>;
 };
 
 export function RoadmapListScreen({ navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [list, setList] = useState<Roadmap[]>([]);
   const [tree, setTree] = useState<RoadmapTree>({});
   const [collection, setCollection] = useState<string[]>([]);
@@ -100,7 +104,7 @@ export function RoadmapListScreen({ navigation }: Props) {
                   const percent = nodes.length ? Math.round((completed / nodes.length) * 100) : 0;
                   const userLevel = skillLevels[rm.id]?.levelLabel;
                   return (
-                    <View key={rm.id} style={[styles.card, shadow.card]}>
+                    <View key={rm.id} style={[styles.card, elevation]}>
                       <View style={styles.topRow}>
                         <View style={styles.levelPill}>
                           <Text style={styles.levelText}>
@@ -186,7 +190,7 @@ export function RoadmapListScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   list: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
   sectionTitle: {
     color: colors.textMuted,
@@ -211,7 +215,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     alignSelf: 'flex-start',
   },
   levelText: { color: colors.textMuted, fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },

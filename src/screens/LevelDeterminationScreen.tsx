@@ -7,9 +7,13 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { getRoadmaps, getUserSkillLevels } from '../api/services';
 import type { Roadmap, UserSkillLevel } from '../api/types';
 import type { MainTabParamList } from '../navigation/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function LevelDeterminationScreen() {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const tabNav = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [loading, setLoading] = useState(true);
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
@@ -44,7 +48,7 @@ export function LevelDeterminationScreen() {
   return (
     <ScreenScaffold title="Определение уровня" loading={loading}>
       <View style={styles.content}>
-        <View style={[styles.headerCard, shadow.card]}>
+        <View style={[styles.headerCard, elevation]}>
           <Text style={styles.hTitle}>Тесты по направлениям</Text>
           <Text style={styles.hSub}>
             Выберите направление: ИИ выдаст тест с вариантами ответов и открытые вопросы. После отправки уровень
@@ -81,7 +85,7 @@ export function LevelDeterminationScreen() {
           }}
         />
 
-        <View style={[styles.detailCard, shadow.card]}>
+        <View style={[styles.detailCard, elevation]}>
           {selected ? (
             <>
               <Text style={styles.bigTitle}>{selected.title}</Text>
@@ -106,7 +110,7 @@ export function LevelDeterminationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 3 },
   headerCard: {
     backgroundColor: colors.glass,
@@ -127,7 +131,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.md,
   },
-  rmCardActive: { borderColor: 'rgba(124,58,237,0.55)', backgroundColor: 'rgba(124,58,237,0.12)' },
+  rmCardActive: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   rmTitle: { color: colors.text, fontWeight: '900' },
   rmDesc: { color: colors.textMuted, marginTop: 6, fontSize: 12, lineHeight: 16 },
   levelPill: {
@@ -138,7 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   levelText: { color: colors.textMuted, fontWeight: '900', fontSize: 11, letterSpacing: 0.6 },
   detailCard: {

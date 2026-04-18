@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function AuthScreen() {
   const { login, register } = useAuth();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -110,7 +113,7 @@ export function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   scroll: {
     padding: spacing.lg,

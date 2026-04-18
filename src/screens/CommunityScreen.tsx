@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -21,10 +21,14 @@ import {
 } from '../api/services';
 import type { CommunityPost } from '../api/types';
 import { useAuth } from '../context/AuthContext';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function CommunityScreen() {
   const { user } = useAuth();
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,7 +137,7 @@ export function CommunityScreen() {
         renderItem={({ item }) => {
           const liked = user ? item.likedByUserIds.includes(user.id) : false;
           return (
-            <View style={styles.card}>
+            <View style={[styles.card, elevation]}>
               <Text style={styles.postTitle}>{item.title}</Text>
               <Text style={styles.author}>
                 {item.authorName} · {item.focusArea}
@@ -210,7 +214,7 @@ export function CommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   toolbar: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 },
   card: {

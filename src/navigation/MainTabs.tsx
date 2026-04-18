@@ -8,11 +8,15 @@ import { CommunityScreen } from '../screens/CommunityScreen';
 import { ProfileStack } from './ProfileStack';
 import { BlurView } from 'expo-blur';
 import { StyleSheet, View } from 'react-native';
-import { colors, radius, shadow } from '../theme';
+import { cardShadow, radius } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
+  const { colors, mode } = useTheme();
+  const styles = makeStyles(colors, mode);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -20,11 +24,11 @@ export function MainTabs() {
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => (
           <View style={StyleSheet.absoluteFill}>
-            <BlurView intensity={35} tint="dark" style={[StyleSheet.absoluteFill, styles.blur]} />
+            <BlurView intensity={35} tint={mode === 'dark' ? 'dark' : 'light'} style={[StyleSheet.absoluteFill, styles.blur]} />
           </View>
         ),
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: 'rgba(243,244,246,0.55)',
+        tabBarInactiveTintColor: mode === 'dark' ? 'rgba(243,244,246,0.55)' : 'rgba(17,24,39,0.45)',
         tabBarHideOnKeyboard: true,
       }}
     >
@@ -82,22 +86,21 @@ export function MainTabs() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    left: 14,
-    right: 14,
-    bottom: 14,
-    height: 64,
-    borderRadius: radius.lg,
-    borderTopWidth: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
-    ...shadow.card,
-  },
-  blur: {
-    backgroundColor: 'rgba(11,16,32,0.55)',
-  },
-});
+const makeStyles = (colors: { border: string; bg2: string }, mode: 'dark' | 'light') =>
+  StyleSheet.create({
+    tabBar: {
+      height: 64,
+      marginHorizontal: 14,
+      marginBottom: 14,
+      borderRadius: radius.lg,
+      borderTopWidth: 0,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: 'transparent',
+      overflow: 'hidden',
+      ...cardShadow(mode),
+    },
+    blur: {
+      backgroundColor: colors.bg2,
+    },
+  });

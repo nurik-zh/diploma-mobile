@@ -12,9 +12,13 @@ import {
   cancelVerificationBooking,
 } from '../api/services';
 import type { Roadmap, VerificationBooking, VerificationSlot } from '../api/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 export function VerificationScreen() {
+  const { colors, mode: themeMode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(themeMode), [themeMode]);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<VerificationSlot[]>([]);
   const [bookings, setBookings] = useState<VerificationBooking[]>([]);
@@ -60,7 +64,7 @@ export function VerificationScreen() {
   return (
     <ScreenScaffold title="Подтверждение навыков" loading={loading}>
       <View style={styles.content}>
-        <View style={[styles.card, shadow.card]}>
+        <View style={[styles.card, elevation]}>
           <Text style={styles.h}>Оформление записи</Text>
 
           <Text style={styles.label}>Направление</Text>
@@ -103,7 +107,7 @@ export function VerificationScreen() {
           data={filteredSlots}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
-            <View style={[styles.slot, shadow.card]}>
+            <View style={[styles.slot, elevation]}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.slotTitle} numberOfLines={1}>
                   {item.date} · {item.time}
@@ -139,7 +143,7 @@ export function VerificationScreen() {
 
         <Text style={styles.sectionTitle}>Мои записи</Text>
         {bookings.map((b) => (
-          <View key={b.id} style={[styles.booking, shadow.card]}>
+          <View key={b.id} style={[styles.booking, elevation]}>
             <View style={{ flex: 1 }}>
               <Text style={styles.slotTitle} numberOfLines={1}>{b.roadmapTitle}</Text>
               <Text style={styles.slotMeta} numberOfLines={2}>
@@ -172,7 +176,7 @@ export function VerificationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xl * 2 },
   card: {
     backgroundColor: colors.glass,
@@ -192,11 +196,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   roadmapChipActive: {
-    borderColor: 'rgba(124,58,237,0.55)',
-    backgroundColor: 'rgba(124,58,237,0.18)',
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   roadmapChipText: { color: colors.textMuted, fontWeight: '900' },
   roadmapChipTextActive: { color: colors.text },

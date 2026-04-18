@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -8,7 +8,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   label: string;
@@ -25,6 +26,8 @@ export function PrimaryButton({
   variant = 'primary',
   style,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const isOutline = variant === 'outline';
   return (
     <Pressable
@@ -56,7 +59,7 @@ export function PrimaryButton({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   btn: {
     paddingVertical: spacing.sm + 2,
     paddingHorizontal: spacing.lg,

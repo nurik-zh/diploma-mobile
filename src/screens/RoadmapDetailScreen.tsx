@@ -15,11 +15,15 @@ import { StatusPill, type RoadmapNodeStatus } from '../components/StatusPill';
 import { getRoadmapTree, getTodayTasks } from '../api/services';
 import type { DailyTask, RoadmapTree } from '../api/types';
 import type { RoadmapsStackParamList } from '../navigation/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'RoadmapDetail'>;
 
 export function RoadmapDetailScreen({ route, navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const { roadmapId, title } = route.params;
   const [tree, setTree] = useState<RoadmapTree>({});
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
@@ -59,7 +63,7 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
 
   const header = useMemo(
     () => (
-      <View style={[styles.progressCard, shadow.card]}>
+      <View style={[styles.progressCard, elevation]}>
         <View style={styles.progressTop}>
           <Text style={styles.progressLabel}>ПРОГРЕСС</Text>
           <Text style={styles.progressPct}>{percent}%</Text>
@@ -77,7 +81,7 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
         </View>
       </View>
     ),
-    [completed, inProgress, nodes.length, percent]
+    [completed, inProgress, nodes.length, percent, styles, elevation]
   );
 
   return (
@@ -132,7 +136,7 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   list: {
     padding: spacing.md,
     paddingBottom: spacing.xl * 2,
@@ -157,7 +161,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   miniText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
   row: {
@@ -172,8 +176,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.glass,
   },
   rowLocked: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.cardInset,
+    borderColor: colors.border,
+    opacity: 0.85,
   },
   topic: { color: colors.text, fontWeight: '700', fontSize: 15, flex: 1, marginRight: spacing.sm },
   topicLocked: { color: colors.locked },

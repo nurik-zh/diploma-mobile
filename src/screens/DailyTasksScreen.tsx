@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -13,7 +13,8 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { getTodayTasks, submitDailyTask } from '../api/services';
 import type { DailyTask } from '../api/types';
 import type { ProfileStackParamList } from '../navigation/types';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'DailyTasks'>;
 
@@ -25,18 +26,25 @@ type QuizQ = {
 };
 
 export function DailyTasksScreen({ navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
+  const [aiPreparing, setAiPreparing] = useState(false);
 
   const load = useCallback(async () => {
+    setAiPreparing(true);
     try {
       const t = await getTodayTasks();
       setTasks(t);
-    } catch {
+    } catch (e) {
       setTasks([]);
+      setMsg(e instanceof Error ? e.message : 'Не удалось загрузить задания');
     } finally {
+      setAiPreparing(false);
       setLoading(false);
     }
   }, []);
@@ -58,16 +66,20 @@ export function DailyTasksScreen({ navigation }: Props) {
       return;
     }
     try {
+      setAiPreparing(true);
       await submitDailyTask(task.id, optionId);
       await load();
     } catch (e) {
       setMsg(e instanceof Error ? e.message : 'Ошибка');
+    } finally {
+      setAiPreparing(false);
     }
   }
 
   return (
     <ScreenScaffold title="Квесты дня" loading={loading}>
       <ScrollView contentContainerStyle={styles.content}>
+        {aiPreparing ? <Text style={styles.muted}>ИИ готовит задание, подождите...</Text> : null}
         {tasks.length === 0 ? (
           <Text style={styles.muted}>На сегодня нет заданий</Text>
         ) : (
@@ -76,7 +88,7 @@ export function DailyTasksScreen({ navigation }: Props) {
             const q0 = quiz?.questions?.[0];
             const done = task.completed;
             return (
-              <View key={task.id} style={styles.card}>
+              <View key={task.id} style={[styles.card, elevation]}>
                 <Text style={styles.roadmap}>{task.roadmapTitle}</Text>
                 <Text style={styles.node}>{task.nodeTitle}</Text>
                 <Text style={styles.desc}>{task.description}</Text>
@@ -127,7 +139,7 @@ export function DailyTasksScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
   card: {
     backgroundColor: colors.bgElevated,

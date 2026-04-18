@@ -1,24 +1,22 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenScaffold } from '../components/ScreenScaffold';
-import { PrimaryButton } from '../components/PrimaryButton';
 import { ProgressBar } from '../components/ProgressBar';
-import { useAuth } from '../context/AuthContext';
 import { getProfile } from '../api/services';
 import type { Profile } from '../api/types';
-import type { ProfileStackParamList } from '../navigation/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
-type Props = {
-  navigation: NativeStackNavigationProp<ProfileStackParamList, 'ProfileHome'>;
-};
-
-export function ProfileScreen({ navigation }: Props) {
+export function ProfileScreen() {
   const { logout } = useAuth();
+  const { colors, mode } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
 
   const load = useCallback(async () => {
     try {
@@ -49,7 +47,7 @@ export function ProfileScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.content}>
         {profile ? (
           <>
-            <View style={[styles.hero, shadow.card]}>
+            <View style={[styles.hero, elevation]}>
               <View style={styles.heroTop}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
@@ -84,46 +82,7 @@ export function ProfileScreen({ navigation }: Props) {
               </View>
             </View>
 
-            <View style={[styles.card, shadow.card]}>
-              <Text style={styles.sectionTitle}>Быстрые действия</Text>
-              <View style={styles.actionsRow}>
-                <PrimaryButton
-                  label="Квесты дня"
-                  onPress={() => navigation.navigate('DailyTasks')}
-                  style={{ flex: 1 }}
-                />
-                <PrimaryButton
-                  label="Друзья"
-                  variant="outline"
-                  onPress={() => navigation.navigate('Friends')}
-                  style={{ flex: 1 }}
-                />
-              </View>
-              <View style={styles.actionsRow}>
-                <PrimaryButton
-                  label="Подтверждение"
-                  variant="outline"
-                  onPress={() => navigation.navigate('Verification')}
-                  style={{ flex: 1 }}
-                />
-                <PrimaryButton
-                  label="Определение уровня"
-                  variant="outline"
-                  onPress={() => navigation.navigate('LevelDetermination')}
-                  style={{ flex: 1 }}
-                />
-              </View>
-              <View style={styles.actionsRow}>
-                <PrimaryButton
-                  label="Выйти"
-                  variant="outline"
-                  onPress={() => logout()}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.card, shadow.card]}>
+            <View style={[styles.card, elevation]}>
               <Text style={styles.sectionTitle}>Навыки</Text>
               {profile.radarSkills.slice(0, 5).map((s) => (
                 <View key={s.id} style={{ marginTop: spacing.sm }}>
@@ -137,7 +96,7 @@ export function ProfileScreen({ navigation }: Props) {
               <Text style={styles.muted}>Средний уровень: {avgSkill}%</Text>
             </View>
 
-            <View style={[styles.card, shadow.card]}>
+            <View style={[styles.card, elevation]}>
               <Text style={styles.sectionTitle}>Достижения</Text>
               <View style={styles.badgesWrap}>
                 {profile.achievements.map((a) => (
@@ -147,6 +106,11 @@ export function ProfileScreen({ navigation }: Props) {
                 ))}
               </View>
             </View>
+
+            <Pressable style={[styles.logoutBtn, elevation]} onPress={logout}>
+              <MaterialCommunityIcons name="logout" size={18} color={colors.text} />
+              <Text style={styles.logoutText}>Выйти</Text>
+            </Pressable>
           </>
         ) : (
           <Text style={styles.err}>Не удалось загрузить профиль</Text>
@@ -156,7 +120,7 @@ export function ProfileScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 3 },
   hero: {
     backgroundColor: colors.glass,
@@ -194,7 +158,7 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     minWidth: 110,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
@@ -211,14 +175,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sectionTitle: { color: colors.textMuted, fontWeight: '900', letterSpacing: 0.9, fontSize: 12 },
-  actionsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   skillRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   skillLabel: { color: colors.text, fontWeight: '800' },
   skillValue: { color: colors.textMuted, fontWeight: '900' },
   muted: { color: colors.textMuted, marginTop: spacing.md, fontWeight: '800' },
   badgesWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   badge: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     paddingHorizontal: spacing.sm,
     paddingVertical: 8,
     borderRadius: radius.lg,
@@ -226,5 +189,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   badgeText: { color: colors.text, fontWeight: '700' },
+  logoutBtn: {
+    backgroundColor: colors.glass,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  logoutText: { color: colors.text, fontWeight: '700', fontSize: 16 },
   err: { color: colors.danger },
 });

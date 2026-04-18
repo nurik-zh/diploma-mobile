@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { getVacancyById } from '../api/services';
 import type { VacanciesStackParamList } from '../navigation/types';
-import { colors, radius, spacing } from '../theme';
+import { ThemeColors, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<VacanciesStackParamList, 'VacancyDetail'>;
 
@@ -23,6 +24,8 @@ type VacancyDetail = {
 };
 
 export function VacancyDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { id, title } = route.params;
   const [data, setData] = useState<VacancyDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +95,7 @@ export function VacancyDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
   summary: { color: colors.text, lineHeight: 22, marginBottom: spacing.lg },
   h2: {

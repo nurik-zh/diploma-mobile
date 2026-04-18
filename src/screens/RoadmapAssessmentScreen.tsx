@@ -6,11 +6,15 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { getRoadmapAssessment, submitRoadmapAssessment } from '../api/services';
 import type { RoadmapAssessment } from '../api/types';
 import type { RoadmapsStackParamList } from '../navigation/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'Assessment'>;
 
 export function RoadmapAssessmentScreen({ route, navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const { roadmapId, title } = route.params;
   const [data, setData] = useState<RoadmapAssessment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,15 +24,18 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   const [written, setWritten] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [resultText, setResultText] = useState<string | null>(null);
+  const [aiPreparing, setAiPreparing] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
+    setAiPreparing(true);
     try {
       const a = await getRoadmapAssessment(roadmapId);
       setData(a);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
     } finally {
+      setAiPreparing(false);
       setLoading(false);
     }
   }, [roadmapId]);
@@ -47,6 +54,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   async function onSubmit() {
     if (!data) return;
     setSubmitting(true);
+    setAiPreparing(true);
     setResultText(null);
     setError(null);
     try {
@@ -67,6 +75,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка');
     } finally {
+      setAiPreparing(false);
       setSubmitting(false);
     }
   }
@@ -75,10 +84,11 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
     <ScreenScaffold title={`Оценка · ${title}`} loading={loading}>
       <ScrollView contentContainerStyle={styles.content}>
         {error ? <Text style={styles.err}>{error}</Text> : null}
+        {aiPreparing ? <Text style={styles.info}>ИИ готовит ответ, подождите...</Text> : null}
 
         {data ? (
           <>
-            <View style={[styles.card, shadow.card]}>
+            <View style={[styles.card, elevation]}>
               <Text style={styles.h}>Тест с вариантами ответов</Text>
               <Text style={styles.mutedIntro}>
                 ИИ сформировал вопросы по направлению. Выберите один вариант в каждом вопросе.
@@ -110,7 +120,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
               })}
             </View>
 
-            <View style={[styles.card, shadow.card]}>
+            <View style={[styles.card, elevation]}>
               <Text style={styles.h}>Письменные ответы</Text>
               {data.writtenQuestions.map((q) => (
                 <View key={q.id} style={styles.q}>
@@ -147,7 +157,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xl * 2, gap: spacing.md },
   card: {
     backgroundColor: colors.glass,
@@ -171,11 +181,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   optionRowActive: {
-    borderColor: 'rgba(124,58,237,0.55)',
-    backgroundColor: 'rgba(124,58,237,0.18)',
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
   },
   optionLetter: {
     width: 28,
@@ -192,13 +202,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     color: colors.text,
     padding: spacing.md,
     textAlignVertical: 'top',
   },
   muted: { color: colors.textMuted, marginTop: spacing.sm, fontWeight: '700' },
   err: { color: colors.danger },
+  info: { color: colors.textMuted, marginBottom: spacing.sm },
   ok: { color: colors.success, fontWeight: '800', marginBottom: spacing.sm, lineHeight: 20 },
 });
 

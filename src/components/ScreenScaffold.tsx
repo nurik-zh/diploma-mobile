@@ -1,9 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import { colors, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   title?: string;
@@ -12,6 +11,9 @@ type Props = {
 };
 
 export function ScreenScaffold({ title, children, loading }: Props) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <LinearGradient
@@ -20,13 +22,6 @@ export function ScreenScaffold({ title, children, loading }: Props) {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {title ? (
-        <View style={styles.headerWrap}>
-          <BlurView intensity={28} tint="dark" style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-          </BlurView>
-        </View>
-      ) : null}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -38,26 +33,8 @@ export function ScreenScaffold({ title, children, loading }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  headerWrap: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  header: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.glass,
-    overflow: 'hidden',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: 0.3,
-  },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-});
+const makeStyles = (colors: { bg: string }) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.bg },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  });

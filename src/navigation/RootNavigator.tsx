@@ -5,24 +5,25 @@ import { AuthScreen } from '../screens/AuthScreen';
 import { MainTabs } from './MainTabs';
 import type { RootStackParamList } from './types';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { colors } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const navTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: colors.bg,
-    card: colors.bg,
-    text: colors.text,
-    border: colors.border,
-    primary: colors.accent,
-  },
-};
-
 export function RootNavigator() {
   const { user, loading } = useAuth();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
+  const navTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: colors.bg,
+      card: colors.bg,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.accent,
+    },
+  };
 
   if (loading) {
     return (
@@ -45,11 +46,12 @@ export function RootNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  splash: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const makeStyles = (colors: { bg: string }) =>
+  StyleSheet.create({
+    splash: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+  });

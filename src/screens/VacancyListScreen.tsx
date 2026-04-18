@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -14,13 +14,17 @@ import { ScreenScaffold } from '../components/ScreenScaffold';
 import { getVacancies } from '../api/services';
 import type { VacancyListItem } from '../api/types';
 import type { VacanciesStackParamList } from '../navigation/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   navigation: NativeStackNavigationProp<VacanciesStackParamList, 'VacancyList'>;
 };
 
 export function VacancyListScreen({ navigation }: Props) {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [items, setItems] = useState<VacancyListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,7 +65,7 @@ export function VacancyListScreen({ navigation }: Props) {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={{ marginBottom: spacing.md }}>
-            <View style={[styles.headerCard, shadow.card]}>
+            <View style={[styles.headerCard, elevation]}>
               <Text style={styles.hTitle}>Карьерный трек</Text>
               <Text style={styles.hSub}>Выберите вакансию и перейдите в план подготовки</Text>
               <View style={styles.statsRow}>
@@ -115,7 +119,7 @@ export function VacancyListScreen({ navigation }: Props) {
         }
         renderItem={({ item }) => (
           <Pressable
-            style={({ pressed }) => [styles.card, shadow.card, pressed && { opacity: 0.9 }]}
+            style={({ pressed }) => [styles.card, elevation, pressed && { opacity: 0.9 }]}
             onPress={() =>
               navigation.navigate('VacancyDetail', {
                 id: item.id,
@@ -156,7 +160,7 @@ export function VacancyListScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   list: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
   headerCard: {
     backgroundColor: colors.glass,
@@ -171,7 +175,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
   statBox: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     color: colors.text,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -195,9 +199,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
-  chipActive: { backgroundColor: 'rgba(124,58,237,0.20)', borderColor: 'rgba(124,58,237,0.45)' },
+  chipActive: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontWeight: '900', fontSize: 11, letterSpacing: 0.6 },
   chipTextActive: { color: colors.text },
   card: {
@@ -218,7 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   levelText: { color: colors.textMuted, fontWeight: '900', fontSize: 11, letterSpacing: 0.6 },
   salaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
@@ -229,12 +233,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   tasksText: { color: colors.textMuted, fontWeight: '900', fontSize: 11, letterSpacing: 0.4 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },
   tag: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     borderWidth: 1,
     borderColor: colors.border,
     paddingHorizontal: spacing.sm,

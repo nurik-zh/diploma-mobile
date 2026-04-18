@@ -22,10 +22,14 @@ import {
   removeFriend,
 } from '../api/services';
 import type { Friend, FriendChallenge, FriendNotification, GlobalMap } from '../api/types';
-import { colors, radius, shadow, spacing } from '../theme';
+import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { ProgressBar } from '../components/ProgressBar';
+import { useTheme } from '../context/ThemeContext';
 
 export function FriendsScreen() {
+  const { colors, mode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [items, setItems] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -78,24 +82,24 @@ export function FriendsScreen() {
     const mapCount = map?.participants?.length ?? Math.max(friendsCount, friendsCount ? friendsCount + 1 : 0);
     return (
       <View style={styles.statsRow}>
-        <View style={[styles.statCard, shadow.card]}>
+        <View style={[styles.statCard, elevation]}>
           <Text style={styles.statLabel}>Друзья</Text>
           <Text style={styles.statVal}>{friendsCount}</Text>
         </View>
-        <View style={[styles.statCard, shadow.card]}>
+        <View style={[styles.statCard, elevation]}>
           <Text style={styles.statLabel}>Участники карты</Text>
           <Text style={styles.statVal}>{mapCount}</Text>
         </View>
       </View>
     );
-  }, [items.length, map?.participants?.length]);
+  }, [items.length, map?.participants?.length, styles, elevation]);
 
   return (
     <ScreenScaffold title="Друзья" loading={loading}>
       <View style={styles.content}>
         {headerStats}
         <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl * 3 }}>
-          <View style={[styles.card, shadow.card]}>
+          <View style={[styles.card, elevation]}>
             <Text style={styles.sectionTitle}>Добавить друга</Text>
             <View style={styles.row}>
               <TextInput
@@ -111,7 +115,7 @@ export function FriendsScreen() {
             {err ? <Text style={styles.err}>{err}</Text> : null}
           </View>
 
-          <View style={[styles.card, shadow.card]}>
+          <View style={[styles.card, elevation]}>
             <Text style={styles.sectionTitle}>Ваша сеть</Text>
             {items.map((item) => (
               <View key={item.userId} style={[styles.friend, { marginTop: spacing.sm }]}>
@@ -160,7 +164,7 @@ export function FriendsScreen() {
             ))}
           </View>
 
-          <View style={[styles.card, shadow.card]}>
+          <View style={[styles.card, elevation]}>
             <Text style={styles.sectionTitle}>Глобальная карта</Text>
             <Text style={styles.meta}>
               Открывайте каждого участника и смотрите его персональную “паутинную” диаграмму.
@@ -245,7 +249,7 @@ export function FriendsScreen() {
 
       <Modal visible={modalUser != null} animationType="slide" transparent>
         <View style={styles.modalBg}>
-          <View style={[styles.modalBox, shadow.card]}>
+          <View style={[styles.modalBox, elevation]}>
             <Text style={styles.modalTitle}>Паутина знаний</Text>
             <Text style={styles.meta}>{modalUser?.fullName}</Text>
             <ScrollView style={{ marginTop: spacing.md }} contentContainerStyle={{ gap: spacing.sm }}>
@@ -270,7 +274,7 @@ export function FriendsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { padding: spacing.md, gap: spacing.md },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   statCard: {
@@ -297,7 +301,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     color: colors.text,
     padding: spacing.md,
   },
@@ -332,7 +336,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   miniText: { color: colors.textMuted, fontWeight: '800', fontSize: 12 },
   globalRoot: {
@@ -352,7 +356,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   inviteTitle: { color: colors.text, fontWeight: '900' },
   challenge: {
@@ -361,14 +365,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
   },
   challengeTop: { color: colors.textMuted, fontWeight: '900', fontSize: 11, letterSpacing: 0.8 },
   challengeVs: { color: colors.text, fontWeight: '900', marginTop: 4 },
   participants: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   participantCard: {
     width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: colors.cardInset,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
