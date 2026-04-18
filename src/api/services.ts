@@ -76,7 +76,11 @@ export async function getRoadmapAssessment(roadmapId: string): Promise<RoadmapAs
 
 export async function submitRoadmapAssessment(
   roadmapId: string,
-  body: { theoryScore: number; writtenAnswers: { question: string; answer: string }[] }
+  body: {
+    sessionId: string;
+    quizAnswers: Record<string, number>;
+    writtenAnswers: { question: string; answer: string }[];
+  }
 ): Promise<unknown> {
   return apiRequest(`/api/roadmaps/${roadmapId}/assessment/submit`, {
     method: 'POST',

@@ -16,7 +16,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [theoryScores, setTheoryScores] = useState<Record<number, 1 | 2 | 3>>({});
+  const [quizChoice, setQuizChoice] = useState<Record<string, number>>({});
   const [written, setWritten] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [resultText, setResultText] = useState<string | null>(null);
@@ -37,16 +37,12 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
     load();
   }, [load]);
 
-  const theoryTotal = useMemo(() => {
-    if (!data) return 0;
-    return data.theoryQuestions.reduce((sum, _, idx) => sum + (theoryScores[idx] ?? 1), 0);
-  }, [data, theoryScores]);
-
   const canSubmit = useMemo(() => {
     if (!data) return false;
+    const quizOk = data.quizQuestions.every((q) => typeof quizChoice[q.id] === 'number');
     const writtenOk = data.writtenQuestions.every((q) => (written[q.id] ?? '').trim().length >= 3);
-    return writtenOk;
-  }, [data, written]);
+    return quizOk && writtenOk;
+  }, [data, written, quizChoice]);
 
   async function onSubmit() {
     if (!data) return;
@@ -59,9 +55,10 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
         answer: (written[q.id] ?? '').trim(),
       }));
       const res = (await submitRoadmapAssessment(roadmapId, {
-        theoryScore: theoryTotal,
+        sessionId: data.sessionId,
+        quizAnswers: quizChoice,
         writtenAnswers,
-      })) as { levelLabel?: string; feedback?: string; message?: string };
+      })) as { levelLabel?: string; feedback?: string; message?: string; error?: string };
       setResultText(
         res?.levelLabel
           ? `Ваш уровень: ${res.levelLabel}${res.feedback ? `\n${res.feedback}` : ''}`
@@ -82,22 +79,28 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
         {data ? (
           <>
             <View style={[styles.card, shadow.card]}>
-              <Text style={styles.h}>Теоретический блок</Text>
-              {data.theoryQuestions.map((q, idx) => {
-                const v = theoryScores[idx] ?? 1;
+              <Text style={styles.h}>Тест с вариантами ответов</Text>
+              <Text style={styles.mutedIntro}>
+                ИИ сформировал вопросы по направлению. Выберите один вариант в каждом вопросе.
+              </Text>
+              {data.quizQuestions.map((q) => {
+                const selected = quizChoice[q.id];
                 return (
-                  <View key={idx} style={styles.q}>
-                    <Text style={styles.qText}>{q}</Text>
-                    <View style={styles.scoreRow}>
-                      {[1, 2, 3].map((n) => {
-                        const active = v === n;
+                  <View key={q.id} style={styles.q}>
+                    <Text style={styles.qTextBold}>{q.question}</Text>
+                    <View style={styles.optionsCol}>
+                      {q.options.map((label, optIdx) => {
+                        const active = selected === optIdx;
                         return (
                           <Pressable
-                            key={n}
-                            onPress={() => setTheoryScores((s) => ({ ...s, [idx]: n as 1 | 2 | 3 }))}
-                            style={[styles.scorePill, active && styles.scorePillActive]}
+                            key={optIdx}
+                            onPress={() => setQuizChoice((s) => ({ ...s, [q.id]: optIdx }))}
+                            style={[styles.optionRow, active && styles.optionRowActive]}
                           >
-                            <Text style={[styles.scoreText, active && styles.scoreTextActive]}>{n}</Text>
+                            <Text style={[styles.optionLetter, active && styles.optionLetterActive]}>
+                              {String.fromCharCode(65 + optIdx)}
+                            </Text>
+                            <Text style={[styles.optionLabel, active && styles.optionLabelActive]}>{label}</Text>
                           </Pressable>
                         );
                       })}
@@ -105,7 +108,6 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
                   </View>
                 );
               })}
-              <Text style={styles.muted}>Сумма теории: {theoryTotal}</Text>
             </View>
 
             <View style={[styles.card, shadow.card]}>
@@ -157,22 +159,34 @@ const styles = StyleSheet.create({
   h: { color: colors.text, fontWeight: '900', marginBottom: spacing.sm, letterSpacing: 0.2 },
   q: { marginBottom: spacing.md },
   qText: { color: colors.textMuted, marginBottom: spacing.sm, lineHeight: 20 },
-  scoreRow: { flexDirection: 'row', gap: spacing.sm },
-  scorePill: {
-    flex: 1,
+  mutedIntro: { color: colors.textMuted, marginBottom: spacing.md, lineHeight: 18, fontSize: 13 },
+  qTextBold: { color: colors.text, marginBottom: spacing.sm, lineHeight: 20, fontWeight: '700' },
+  optionsCol: { gap: spacing.sm },
+  optionRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     paddingVertical: 10,
-    borderRadius: radius.lg,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  scorePillActive: {
+  optionRowActive: {
     borderColor: 'rgba(124,58,237,0.55)',
     backgroundColor: 'rgba(124,58,237,0.18)',
   },
-  scoreText: { color: colors.textMuted, fontWeight: '900', fontSize: 16 },
-  scoreTextActive: { color: colors.text },
+  optionLetter: {
+    width: 28,
+    textAlign: 'center',
+    color: colors.textMuted,
+    fontWeight: '900',
+    fontSize: 14,
+  },
+  optionLetterActive: { color: colors.text },
+  optionLabel: { flex: 1, color: colors.textMuted, lineHeight: 20, fontSize: 14 },
+  optionLabelActive: { color: colors.text },
   input: {
     minHeight: 90,
     borderRadius: radius.md,

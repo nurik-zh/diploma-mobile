@@ -99,10 +99,17 @@ export type LeaderboardResponse = {
   };
 };
 
+export type RoadmapAssessmentQuizQuestion = {
+  id: string;
+  question: string;
+  options: string[];
+};
+
 export type RoadmapAssessment = {
   roadmapId: string;
+  sessionId: string;
   title: string;
-  theoryQuestions: string[];
+  quizQuestions: RoadmapAssessmentQuizQuestion[];
   writtenQuestions: {
     id: string;
     text: string;

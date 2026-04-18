@@ -47,7 +47,8 @@ export function LevelDeterminationScreen() {
         <View style={[styles.headerCard, shadow.card]}>
           <Text style={styles.hTitle}>Тесты по направлениям</Text>
           <Text style={styles.hSub}>
-            Выберите направление и пройдите полную оценку: блок теории + письменные ответы.
+            Выберите направление: ИИ выдаст тест с вариантами ответов и открытые вопросы. После отправки уровень
+            оценивается моделью и сохраняется в профиле.
           </Text>
         </View>
 
