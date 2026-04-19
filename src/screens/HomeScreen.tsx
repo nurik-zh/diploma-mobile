@@ -1,19 +1,25 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { ScreenScaffold } from '../components/ScreenScaffold';
-import { getLeaderboard, getProfile, getTodayTasks } from '../api/services';
-import type { DailyTask, LeaderboardResponse, Profile } from '../api/types';
+import { getLeaderboard, getProfile, getTodayTasks, getVerificationBookings } from '../api/services';
+import type { DailyTask, LeaderboardResponse, Profile, VerificationBooking } from '../api/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { MainTabParamList } from '../navigation/types';
 
 export function HomeScreen() {
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const { colors, mode } = useTheme();
+  const scrollBottomPad = useTabScrollBottomPadding();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [todayTasks, setTodayTasks] = useState<DailyTask[]>([]);
+  const [verificationBookings, setVerificationBookings] = useState<VerificationBooking[]>([]);
   const [leaders, setLeaders] = useState<
     { userId: number; fullName: string; points: number; rank: number }[]
   >([]);
@@ -28,8 +34,10 @@ export function HomeScreen() {
         getLeaderboard(),
         getTodayTasks().catch(() => [] as DailyTask[]),
       ]);
+      const bookings = await getVerificationBookings().catch(() => [] as VerificationBooking[]);
       setProfile(p);
       setTodayTasks(Array.isArray(tasks) ? tasks : []);
+      setVerificationBookings(Array.isArray(bookings) ? bookings : []);
       setLeaders(lb.leaders.slice(0, 8));
       setLbSelf(lb.currentUser);
     } catch {
@@ -73,10 +81,15 @@ export function HomeScreen() {
     return { title, subtitle, successIcon: allDone };
   }, [profile, todayTasks]);
 
+  const upcomingBookings = useMemo(
+    () => verificationBookings.filter((b) => b.status === 'scheduled').slice(0, 2),
+    [verificationBookings]
+  );
+
   return (
     <ScreenScaffold title="Diploma" loading={loading}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -100,6 +113,40 @@ export function HomeScreen() {
                 />
                 <Text style={styles.heroMetaText}>{hero.subtitle}</Text>
               </View>
+            </View>
+
+            <View style={[styles.bookingsCard, elevation]}>
+              <View style={styles.bookingsHead}>
+                <Text style={styles.bookingsTitle}>Мои записи</Text>
+                <Pressable
+                  onPress={() => navigation.navigate('Profile', { screen: 'Verification' })}
+                  style={styles.linkBtn}
+                >
+                  <Text style={styles.linkBtnText}>Открыть</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={16} color={colors.accent} />
+                </Pressable>
+              </View>
+              {upcomingBookings.length === 0 ? (
+                <Text style={styles.bookingsEmpty}>
+                  Пока нет активных записей. Запишитесь на подтверждение навыков в разделе профиля.
+                </Text>
+              ) : (
+                upcomingBookings.map((b) => (
+                  <View key={b.id} style={styles.bookingRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.bookingTitle} numberOfLines={1}>
+                        {b.roadmapTitle}
+                      </Text>
+                      <Text style={styles.bookingMeta} numberOfLines={2}>
+                        {b.date} {b.time} · {b.mode === 'online' ? 'Онлайн' : 'Офлайн'}
+                      </Text>
+                    </View>
+                    <View style={styles.bookingPill}>
+                      <Text style={styles.bookingPillText}>Запланировано</Text>
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
 
             <View style={[styles.rankCard, elevation]}>
@@ -146,7 +193,7 @@ export function HomeScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  content: { padding: spacing.md },
   heroCard: {
     backgroundColor: colors.glass,
     borderRadius: radius.lg,
@@ -183,6 +230,59 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
   },
+  bookingsCard: {
+    backgroundColor: colors.glass,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  bookingsHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  bookingsTitle: {
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+    flex: 1,
+  },
+  linkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 4,
+  },
+  linkBtnText: { color: colors.accent, fontWeight: '800', fontSize: 13 },
+  bookingsEmpty: { color: colors.textMuted, lineHeight: 20 },
+  bookingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.cardInset,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  bookingTitle: { color: colors.text, fontWeight: '800' },
+  bookingMeta: { color: colors.textMuted, marginTop: 2, fontSize: 12 },
+  bookingPill: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(22,163,74,0.35)',
+    backgroundColor: 'rgba(22,163,74,0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  bookingPillText: { color: colors.success, fontSize: 11, fontWeight: '800' },
   sectionTitle: {
     color: colors.textMuted,
     fontSize: 16,

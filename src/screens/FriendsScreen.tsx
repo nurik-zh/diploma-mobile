@@ -34,9 +34,11 @@ import type {
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { ProgressBar } from '../components/ProgressBar';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 export function FriendsScreen() {
   const { colors, mode } = useTheme();
+  const scrollBottomPad = useTabScrollBottomPadding();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
   const suggestElevation = useMemo(() => cardShadow(mode), [mode]);
@@ -148,7 +150,12 @@ export function FriendsScreen() {
     <ScreenScaffold title="Друзья" loading={loading}>
       <View style={styles.content}>
         {headerStats}
-        <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl * 3 }}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={{ paddingBottom: scrollBottomPad }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={[styles.addFriendCard, elevation]}>
             <View style={styles.addFriendHeader}>
               <View style={styles.addFriendIconWrap}>
@@ -373,7 +380,8 @@ export function FriendsScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, gap: spacing.md },
+  content: { flex: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, gap: spacing.md },
+  scroll: { flex: 1 },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   statCard: {
     flex: 1,

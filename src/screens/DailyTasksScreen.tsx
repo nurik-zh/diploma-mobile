@@ -16,6 +16,7 @@ import type { DailyTask } from '../api/types';
 import type { ProfileStackParamList } from '../navigation/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = NativeStackScreenProps<ProfileStackParamList, 'DailyTasks'>;
 
@@ -30,6 +31,7 @@ export function DailyTasksScreen({ navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const [tasks, setTasks] = useState<DailyTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [picked, setPicked] = useState<Record<string, string>>({});
@@ -92,7 +94,7 @@ export function DailyTasksScreen({ navigation }: Props) {
   return (
     <ScreenScaffold title="Квесты дня" loading={loading}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -175,7 +177,7 @@ export function DailyTasksScreen({ navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  content: { padding: spacing.md },
   card: {
     backgroundColor: colors.bgElevated,
     borderRadius: radius.lg,

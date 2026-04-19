@@ -8,6 +8,7 @@ import type { RoadmapAssessment } from '../api/types';
 import type { RoadmapsStackParamList } from '../navigation/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'Assessment'>;
 
@@ -15,6 +16,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const { roadmapId, title } = route.params;
   const [data, setData] = useState<RoadmapAssessment | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +92,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   return (
     <ScreenScaffold title={`Оценка · ${title}`} loading={loading}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -191,7 +193,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 2, gap: spacing.md },
+  content: { padding: spacing.md, gap: spacing.md },
   card: {
     backgroundColor: colors.glass,
     borderWidth: 1,

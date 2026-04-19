@@ -16,6 +16,7 @@ import type { VacancyListItem } from '../api/types';
 import type { VacanciesStackParamList } from '../navigation/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = {
   navigation: NativeStackNavigationProp<VacanciesStackParamList, 'VacancyList'>;
@@ -25,6 +26,7 @@ export function VacancyListScreen({ navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const [items, setItems] = useState<VacancyListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,7 +64,8 @@ export function VacancyListScreen({ navigation }: Props) {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: scrollBottomPad }]}
+        style={styles.listFlex}
         ListHeaderComponent={
           <View style={{ marginBottom: spacing.md }}>
             <View style={[styles.headerCard, elevation]}>
@@ -161,7 +164,8 @@ export function VacancyListScreen({ navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  list: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  listFlex: { flex: 1 },
+  list: { padding: spacing.md, flexGrow: 1 },
   headerCard: {
     backgroundColor: colors.glass,
     borderRadius: radius.lg,

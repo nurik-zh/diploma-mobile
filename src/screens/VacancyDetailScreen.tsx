@@ -7,6 +7,7 @@ import { getVacancyById } from '../api/services';
 import type { VacanciesStackParamList } from '../navigation/types';
 import { ThemeColors, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = NativeStackScreenProps<VacanciesStackParamList, 'VacancyDetail'>;
 
@@ -26,6 +27,7 @@ type VacancyDetail = {
 export function VacancyDetailScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const { id, title } = route.params;
   const [data, setData] = useState<VacancyDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export function VacancyDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScreenScaffold title={title} loading={loading}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
         {data ? (
           <>
             <Text style={styles.summary}>{data.summary}</Text>
@@ -96,7 +98,7 @@ export function VacancyDetailScreen({ route, navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  content: { padding: spacing.md },
   summary: { color: colors.text, lineHeight: 22, marginBottom: spacing.lg },
   h2: {
     color: colors.textMuted,

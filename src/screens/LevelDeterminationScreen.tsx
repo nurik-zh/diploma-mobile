@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { ScreenScaffold } from '../components/ScreenScaffold';
@@ -9,11 +9,13 @@ import type { Roadmap, UserSkillLevel } from '../api/types';
 import type { MainTabParamList } from '../navigation/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 export function LevelDeterminationScreen() {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const tabNav = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [loading, setLoading] = useState(true);
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
@@ -47,7 +49,10 @@ export function LevelDeterminationScreen() {
 
   return (
     <ScreenScaffold title="Определение уровня" loading={loading}>
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={[styles.headerCard, elevation]}>
           <Text style={styles.hTitle}>Тесты по направлениям</Text>
           <Text style={styles.hSub}>
@@ -106,13 +111,13 @@ export function LevelDeterminationScreen() {
             <Text style={styles.hSub}>Выберите направление</Text>
           )}
         </View>
-      </View>
+      </ScrollView>
     </ScreenScaffold>
   );
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 3 },
+  content: { padding: spacing.md },
   headerCard: {
     backgroundColor: colors.glass,
     borderWidth: 1,

@@ -23,6 +23,7 @@ import { ProgressBar } from '../components/ProgressBar';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = {
   navigation: NativeStackNavigationProp<RoadmapsStackParamList, 'RoadmapList'>;
@@ -32,6 +33,7 @@ export function RoadmapListScreen({ navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const [list, setList] = useState<Roadmap[]>([]);
   const [tree, setTree] = useState<RoadmapTree>({});
   const [collection, setCollection] = useState<string[]>([]);
@@ -76,7 +78,8 @@ export function RoadmapListScreen({ navigation }: Props) {
       <FlatList
         data={[{ key: 'my' }, { key: 'other' }] as { key: 'my' | 'other' }[]}
         keyExtractor={(item) => item.key}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: scrollBottomPad }]}
+        style={styles.listFlex}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -197,7 +200,8 @@ export function RoadmapListScreen({ navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  list: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  listFlex: { flex: 1 },
+  list: { padding: spacing.md, flexGrow: 1 },
   sectionTitle: {
     color: colors.textMuted,
     fontSize: 12,

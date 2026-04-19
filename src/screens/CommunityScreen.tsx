@@ -23,12 +23,14 @@ import type { CommunityPost } from '../api/types';
 import { useAuth } from '../context/AuthContext';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 export function CommunityScreen() {
   const { user } = useAuth();
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -113,17 +115,19 @@ export function CommunityScreen() {
 
   return (
     <ScreenScaffold title="Сообщество" loading={loading}>
-      <View style={styles.toolbar}>
-        <PrimaryButton
-          label="Новый пост"
-          onPress={() => setModal(true)}
-          disabled={!user}
-        />
-      </View>
-      <FlatList
+      <View style={styles.screenBody}>
+        <View style={styles.toolbar}>
+          <PrimaryButton
+            label="Новый пост"
+            onPress={() => setModal(true)}
+            disabled={!user}
+          />
+        </View>
+        <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: scrollBottomPad }]}
+        style={styles.listFlex}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -180,6 +184,7 @@ export function CommunityScreen() {
           );
         }}
       />
+      </View>
 
       <Modal visible={modal} animationType="slide" transparent>
         <View style={styles.modalBg}>
@@ -215,8 +220,10 @@ export function CommunityScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  screenBody: { flex: 1 },
   toolbar: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
-  list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xl * 2 },
+  listFlex: { flex: 1 },
+  list: { paddingHorizontal: spacing.md, flexGrow: 1 },
   card: {
     backgroundColor: colors.bgElevated,
     borderRadius: radius.lg,

@@ -17,6 +17,7 @@ import {
 import type { RoadmapsStackParamList } from '../navigation/types';
 import { ThemeColors, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'Topic'>;
 
@@ -30,6 +31,7 @@ type Q = {
 export function TopicScreen({ route, navigation }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const { topicId, title } = route.params;
   const [theory, setTheory] = useState('');
   const [questions, setQuestions] = useState<Q[]>([]);
@@ -93,7 +95,7 @@ export function TopicScreen({ route, navigation }: Props) {
 
   return (
     <ScreenScaffold title={title} loading={loading}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
         <Text style={styles.h2}>Теория</Text>
         <Text style={styles.theory}>{theory || '—'}</Text>
 
@@ -153,7 +155,7 @@ export function TopicScreen({ route, navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 2 },
+  content: { padding: spacing.md },
   h2: {
     color: colors.textMuted,
     fontSize: 13,

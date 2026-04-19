@@ -17,6 +17,7 @@ import type { DailyTask, RoadmapTree } from '../api/types';
 import type { RoadmapsStackParamList } from '../navigation/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 type Props = NativeStackScreenProps<RoadmapsStackParamList, 'RoadmapDetail'>;
 
@@ -24,6 +25,7 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
   const { roadmapId, title } = route.params;
   const [tree, setTree] = useState<RoadmapTree>({});
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
@@ -89,7 +91,8 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
       <FlatList
         data={nodes}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: scrollBottomPad }]}
+        style={styles.listFlex}
         ListHeaderComponent={header}
         refreshControl={
           <RefreshControl
@@ -137,10 +140,11 @@ export function RoadmapDetailScreen({ route, navigation }: Props) {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
+  listFlex: { flex: 1 },
   list: {
     padding: spacing.md,
-    paddingBottom: spacing.xl * 2,
     gap: spacing.sm,
+    flexGrow: 1,
   },
   progressCard: {
     borderRadius: radius.lg,

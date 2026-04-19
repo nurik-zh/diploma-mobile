@@ -9,6 +9,7 @@ import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useTabScrollBottomPadding } from '../hooks/useTabScrollBottomPadding';
 
 export function ProfileScreen() {
   const { logout } = useAuth();
@@ -17,6 +18,7 @@ export function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const scrollBottomPad = useTabScrollBottomPadding();
 
   const load = useCallback(async () => {
     try {
@@ -44,7 +46,7 @@ export function ProfileScreen() {
 
   return (
     <ScreenScaffold title="Профиль" loading={loading}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
         {profile ? (
           <>
             <View style={[styles.hero, elevation]}>
@@ -121,7 +123,7 @@ export function ProfileScreen() {
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.md, paddingBottom: spacing.xl * 3 },
+  content: { padding: spacing.md },
   hero: {
     backgroundColor: colors.glass,
     borderRadius: radius.lg,
