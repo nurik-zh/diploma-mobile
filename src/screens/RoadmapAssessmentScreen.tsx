@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -25,6 +25,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [resultText, setResultText] = useState<string | null>(null);
   const [aiPreparing, setAiPreparing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -37,6 +38,7 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
     } finally {
       setAiPreparing(false);
       setLoading(false);
+      setRefreshing(false);
     }
   }, [roadmapId]);
 
@@ -44,12 +46,17 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
     load();
   }, [load]);
 
-  const canSubmit = useMemo(() => {
+  const assessmentHasContent = useMemo(() => {
     if (!data) return false;
+    return data.quizQuestions.length > 0 || data.writtenQuestions.length > 0;
+  }, [data]);
+
+  const canSubmit = useMemo(() => {
+    if (!data || !assessmentHasContent) return false;
     const quizOk = data.quizQuestions.every((q) => typeof quizChoice[q.id] === 'number');
     const writtenOk = data.writtenQuestions.every((q) => (written[q.id] ?? '').trim().length >= 3);
     return quizOk && writtenOk;
-  }, [data, written, quizChoice]);
+  }, [assessmentHasContent, data, written, quizChoice]);
 
   async function onSubmit() {
     if (!data) return;
@@ -82,9 +89,21 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
 
   return (
     <ScreenScaffold title={`Оценка · ${title}`} loading={loading}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={colors.accent}
+          />
+        }
+      >
         {error ? <Text style={styles.err}>{error}</Text> : null}
-        {aiPreparing ? <Text style={styles.info}>ИИ готовит ответ, подождите...</Text> : null}
+        {aiPreparing ? <Text style={styles.info}>ИИ готовит ответ, подождите…</Text> : null}
 
         {data ? (
           <>
@@ -93,6 +112,13 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
               <Text style={styles.mutedIntro}>
                 ИИ сформировал вопросы по направлению. Выберите один вариант в каждом вопросе.
               </Text>
+              {data.quizQuestions.length === 0 ? (
+                <Text style={styles.mutedBlock}>
+                  {data.writtenQuestions.length === 0
+                    ? 'ИИ готовит вопросы оценки — подождите несколько секунд и потяните экран вниз для обновления.'
+                    : 'ИИ ещё готовит блок с вариантами ответов…'}
+                </Text>
+              ) : null}
               {data.quizQuestions.map((q) => {
                 const selected = quizChoice[q.id];
                 return (
@@ -122,6 +148,13 @@ export function RoadmapAssessmentScreen({ route, navigation }: Props) {
 
             <View style={[styles.card, elevation]}>
               <Text style={styles.h}>Письменные ответы</Text>
+              {data.writtenQuestions.length === 0 ? (
+                <Text style={styles.mutedBlock}>
+                  {data.quizQuestions.length === 0
+                    ? 'Открытые вопросы появятся здесь после генерации ИИ.'
+                    : 'ИИ ещё готовит открытые вопросы…'}
+                </Text>
+              ) : null}
               {data.writtenQuestions.map((q) => (
                 <View key={q.id} style={styles.q}>
                   <Text style={styles.qText}>{q.text}</Text>
@@ -210,6 +243,7 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   muted: { color: colors.textMuted, marginTop: spacing.sm, fontWeight: '700' },
   err: { color: colors.danger },
   info: { color: colors.textMuted, marginBottom: spacing.sm },
+  mutedBlock: { color: colors.textMuted, marginTop: spacing.sm, lineHeight: 20 },
   ok: { color: colors.success, fontWeight: '800', marginBottom: spacing.sm, lineHeight: 20 },
 });
 

@@ -36,13 +36,16 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.btn,
         isOutline ? styles.outline : styles.filled,
+        { minWidth: 0 },
         pressed && { opacity: 0.85 },
         disabled && { opacity: 0.45 },
         style,
       ]}
     >
       {isOutline ? (
-        <Text style={[styles.label, styles.labelOutline]}>{label}</Text>
+        <Text style={[styles.labelOutlineBtn, styles.labelOutline]} numberOfLines={2}>
+          {label}
+        </Text>
       ) : (
         <LinearGradient
           colors={[colors.accent, colors.accent2]}
@@ -51,7 +54,9 @@ export function PrimaryButton({
           style={styles.gradient}
         >
           <View style={styles.inner}>
-            <Text style={styles.label}>{label}</Text>
+            <Text style={styles.label} numberOfLines={2}>
+              {label}
+            </Text>
           </View>
         </LinearGradient>
       )}
@@ -72,13 +77,33 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: colors.glass,
     borderWidth: 1,
     borderColor: colors.border,
+    minHeight: 50,
+    justifyContent: 'center',
   },
-  gradient: { width: '100%' },
+  gradient: { alignSelf: 'stretch', width: '100%' },
   inner: {
     alignItems: 'center',
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
+    minHeight: 50,
+    paddingVertical: spacing.sm + 4,
+    paddingHorizontal: spacing.xs,
   },
-  label: { color: colors.text, fontWeight: '800', fontSize: 16 },
+  /** На градиенте всегда светлый текст — читается и в светлой, и в тёмной теме. */
+  label: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.28)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   labelOutline: { color: colors.text },
+  labelOutlineBtn: {
+    fontWeight: '800',
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
 });

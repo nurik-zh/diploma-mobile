@@ -117,6 +117,12 @@ export function RoadmapListScreen({ navigation }: Props) {
                         {rm.description}
                       </Text>
 
+                      {item.key === 'other' ? (
+                        <Text style={styles.aiHint}>
+                          Оценку формирует ИИ: после открытия теста вопросы могут появиться через несколько секунд.
+                        </Text>
+                      ) : null}
+
                       {item.key === 'my' ? (
                         <View style={styles.progressBlock}>
                           <Text style={styles.progressLabel}>ПРОГРЕСС</Text>
@@ -221,6 +227,13 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   levelText: { color: colors.textMuted, fontSize: 11, fontWeight: '900', letterSpacing: 0.6 },
   cardTitle: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: spacing.sm },
   cardDesc: { color: colors.textMuted, marginTop: spacing.xs, fontSize: 13, lineHeight: 18 },
+  aiHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
+  },
   progressBlock: { marginTop: spacing.md },
   progressLabel: { color: colors.textMuted, fontWeight: '800', letterSpacing: 1, fontSize: 12 },
   progressMeta: {
@@ -231,6 +244,11 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   progressCount: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
   progressPct: { color: colors.text, fontSize: 12, fontWeight: '900' },
-  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    alignItems: 'stretch',
+  },
   empty: { color: colors.textMuted },
 });

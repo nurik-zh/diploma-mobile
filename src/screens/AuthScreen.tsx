@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { ScreenScaffold } from '../components/ScreenScaffold';
 import { ThemeColors, radius, spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -37,7 +38,10 @@ export function AuthScreen() {
     }
   }
 
+  const headerTitle = mode === 'login' ? 'Вход' : 'Регистрация';
+
   return (
+    <ScreenScaffold title={headerTitle} showMenu={false} loading={false}>
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -110,14 +114,15 @@ export function AuthScreen() {
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
+    </ScreenScaffold>
   );
 }
 
 const makeStyles = (colors: ThemeColors) => StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1 },
   scroll: {
     padding: spacing.lg,
-    paddingTop: spacing.xl * 2,
+    paddingTop: spacing.md,
   },
   brand: { marginBottom: spacing.xl },
   logo: {

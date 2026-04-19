@@ -7,6 +7,7 @@ import type {
   Friend,
   FriendChallenge,
   FriendNotification,
+  FriendSearchUser,
   GlobalMap,
   LeaderboardResponse,
   Profile,
@@ -147,6 +148,13 @@ export async function getLeaderboard(): Promise<LeaderboardResponse> {
 
 export async function getFriends(): Promise<Friend[]> {
   return apiRequest<Friend[]>('/api/friends');
+}
+
+export async function searchFriendUsers(query: string): Promise<FriendSearchUser[]> {
+  const q = query.trim();
+  if (q.length < 1) return [];
+  const qs = new URLSearchParams({ q });
+  return apiRequest<FriendSearchUser[]>(`/api/friends/search?${qs.toString()}`);
 }
 
 export async function addFriendByEmail(email: string): Promise<Friend[]> {

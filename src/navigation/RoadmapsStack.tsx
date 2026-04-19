@@ -12,7 +12,7 @@ export function RoadmapsStack() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#0f1419' },
+        contentStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Stack.Screen name="RoadmapList" component={RoadmapListScreen} />

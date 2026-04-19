@@ -1,5 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -9,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -20,8 +22,15 @@ import {
   getGlobalMap,
   markFriendNotificationRead,
   removeFriend,
+  searchFriendUsers,
 } from '../api/services';
-import type { Friend, FriendChallenge, FriendNotification, GlobalMap } from '../api/types';
+import type {
+  Friend,
+  FriendChallenge,
+  FriendNotification,
+  FriendSearchUser,
+  GlobalMap,
+} from '../api/types';
 import { ThemeColors, cardShadow, radius, spacing } from '../theme';
 import { ProgressBar } from '../components/ProgressBar';
 import { useTheme } from '../context/ThemeContext';
@@ -30,9 +39,12 @@ export function FriendsScreen() {
   const { colors, mode } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const elevation = useMemo(() => cardShadow(mode), [mode]);
+  const suggestElevation = useMemo(() => cardShadow(mode), [mode]);
   const [items, setItems] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
+  const [suggestions, setSuggestions] = useState<FriendSearchUser[]>([]);
+  const [suggLoading, setSuggLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [map, setMap] = useState<GlobalMap | null>(null);
   const [notifications, setNotifications] = useState<FriendNotification[]>([]);
@@ -66,12 +78,50 @@ export function FriendsScreen() {
     }, [load])
   );
 
+  useEffect(() => {
+    const q = email.trim();
+    if (q.length < 1) {
+      setSuggestions([]);
+      setSuggLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setSuggLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const rows = await searchFriendUsers(q);
+        if (!cancelled) setSuggestions(rows);
+      } catch {
+        if (!cancelled) setSuggestions([]);
+      } finally {
+        if (!cancelled) setSuggLoading(false);
+      }
+    }, 280);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [email]);
+
+  async function onPickUser(u: FriendSearchUser) {
+    setErr(null);
+    try {
+      const next = await addFriendByEmail(u.email);
+      setItems(next);
+      setEmail('');
+      setSuggestions([]);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Ошибка');
+    }
+  }
+
   async function onAdd() {
     setErr(null);
     try {
       const next = await addFriendByEmail(email.trim());
       setItems(next);
       setEmail('');
+      setSuggestions([]);
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Ошибка');
     }
@@ -99,19 +149,67 @@ export function FriendsScreen() {
       <View style={styles.content}>
         {headerStats}
         <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl * 3 }}>
-          <View style={[styles.card, elevation]}>
-            <Text style={styles.sectionTitle}>Добавить друга</Text>
-            <View style={styles.row}>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Введите email"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                style={styles.input}
-              />
-              <PrimaryButton label="Добавить" onPress={onAdd} disabled={!email.trim()} />
+          <View style={[styles.addFriendCard, elevation]}>
+            <View style={styles.addFriendHeader}>
+              <View style={styles.addFriendIconWrap}>
+                <MaterialCommunityIcons name="account-search-outline" size={24} color={colors.accent} />
+              </View>
+              <View style={styles.addFriendHeaderText}>
+                <Text style={styles.addFriendTitle}>Найти друга</Text>
+                <Text style={styles.addFriendSub}>По имени или email</Text>
+              </View>
             </View>
+            <Text style={styles.hint}>
+              Подходящие люди появятся ниже. Нажмите строку — друг добавится; или введите email и нажмите кнопку.
+            </Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Начните вводить…"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={styles.inputFull}
+            />
+            {suggLoading ? (
+              <ActivityIndicator style={{ marginTop: spacing.md }} color={colors.accent} />
+            ) : null}
+            {suggestions.length > 0 ? (
+              <View style={[styles.suggestBox, suggestElevation]}>
+                {suggestions.map((u, idx) => (
+                  <Pressable
+                    key={u.userId}
+                    onPress={() => onPickUser(u)}
+                    style={({ pressed }) => [
+                      styles.suggestRow,
+                      idx === suggestions.length - 1 && styles.suggestRowLast,
+                      pressed && styles.suggestRowPressed,
+                    ]}
+                  >
+                    <View style={styles.suggestAvatar}>
+                      <Text style={styles.suggestAvatarText}>{u.avatar}</Text>
+                    </View>
+                    <View style={styles.suggestTextCol}>
+                      <Text style={styles.suggestName} numberOfLines={1}>
+                        {u.fullName}
+                      </Text>
+                      <Text style={styles.suggestEmail} numberOfLines={1}>
+                        {u.email}
+                      </Text>
+                    </View>
+                    <MaterialCommunityIcons name="account-plus-outline" size={22} color={colors.accent} />
+                  </Pressable>
+                ))}
+              </View>
+            ) : email.trim().length >= 1 && !suggLoading ? (
+              <Text style={styles.suggestEmpty}>Пользователей не найдено — попробуйте другой запрос.</Text>
+            ) : null}
+            <PrimaryButton
+              label="Добавить по email"
+              onPress={onAdd}
+              disabled={!email.trim()}
+              style={{ marginTop: spacing.lg, alignSelf: 'stretch' }}
+            />
             {err ? <Text style={styles.err}>{err}</Text> : null}
           </View>
 
@@ -287,6 +385,32 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   statLabel: { color: colors.textMuted, fontWeight: '900', letterSpacing: 0.8, fontSize: 11 },
   statVal: { color: colors.text, fontWeight: '900', fontSize: 20, marginTop: 6 },
+  addFriendCard: {
+    backgroundColor: colors.glass,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    overflow: 'visible',
+  },
+  addFriendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  addFriendIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: 'rgba(124,58,237,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addFriendHeaderText: { flex: 1, minWidth: 0 },
+  addFriendTitle: { color: colors.text, fontWeight: '900', fontSize: 18, letterSpacing: 0.2 },
+  addFriendSub: { color: colors.textMuted, fontSize: 13, marginTop: 4, fontWeight: '600' },
   card: {
     backgroundColor: colors.glass,
     borderWidth: 1,
@@ -295,16 +419,54 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
     padding: spacing.md,
   },
   sectionTitle: { color: colors.textMuted, fontWeight: '900', letterSpacing: 0.9, fontSize: 12 },
+  hint: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: spacing.md },
   row: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
-  input: {
-    flex: 1,
-    borderRadius: radius.md,
+  inputFull: {
+    marginTop: spacing.md,
+    minHeight: 50,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.cardInset,
     color: colors.text,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    fontSize: 16,
   },
+  suggestBox: {
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(124,58,237,0.2)',
+    backgroundColor: colors.bgElevated,
+    overflow: 'hidden',
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  suggestRowLast: { borderBottomWidth: 0 },
+  suggestRowPressed: { backgroundColor: colors.accentSoft },
+  suggestAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(124,58,237,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(124,58,237,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suggestAvatarText: { color: colors.text, fontWeight: '900', fontSize: 14 },
+  suggestTextCol: { flex: 1, minWidth: 0 },
+  suggestName: { color: colors.text, fontWeight: '800', fontSize: 15 },
+  suggestEmail: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+  suggestEmpty: { color: colors.textMuted, fontSize: 12, marginTop: spacing.sm, lineHeight: 17 },
   err: { color: colors.danger, marginTop: spacing.sm },
   friend: {
     flexDirection: 'row',

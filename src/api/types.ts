@@ -152,6 +152,14 @@ export type VerificationBooking = {
   certificateId?: string | null;
 };
 
+/** Результат поиска пользователя для добавления в друзья. */
+export type FriendSearchUser = {
+  userId: number;
+  email: string;
+  fullName: string;
+  avatar: string;
+};
+
 export type Friend = {
   userId: number;
   email: string;

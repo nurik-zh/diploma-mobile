@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -34,20 +35,32 @@ export function DailyTasksScreen({ navigation }: Props) {
   const [picked, setPicked] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [aiPreparing, setAiPreparing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setAiPreparing(true);
     try {
       const t = await getTodayTasks();
       setTasks(t);
+      setMsg(null);
     } catch (e) {
       setTasks([]);
       setMsg(e instanceof Error ? e.message : 'Не удалось загрузить задания');
     } finally {
       setAiPreparing(false);
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
+
+  const pendingAiCount = useMemo(() => {
+    return tasks.filter((task) => {
+      if (task.completed) return false;
+      const quiz = task.quizData as { questions?: QuizQ[] } | null;
+      const q0 = quiz?.questions?.[0];
+      return !q0;
+    }).length;
+  }, [tasks]);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,11 +91,33 @@ export function DailyTasksScreen({ navigation }: Props) {
 
   return (
     <ScreenScaffold title="Квесты дня" loading={loading}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {aiPreparing ? <Text style={styles.muted}>ИИ готовит задание, подождите...</Text> : null}
-        {tasks.length === 0 ? (
-          <Text style={styles.muted}>На сегодня нет заданий</Text>
-        ) : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              load();
+            }}
+            tintColor={colors.accent}
+          />
+        }
+      >
+        {aiPreparing ? <Text style={styles.infoBanner}>ИИ готовит задание, подождите…</Text> : null}
+        {tasks.length === 0 && !msg ? (
+          <Text style={styles.infoBanner}>
+            ИИ формирует квесты на сегодня. Загляните чуть позже или потяните экран вниз для обновления.
+          </Text>
+        ) : null}
+        {tasks.length > 0 && pendingAiCount > 0 ? (
+          <Text style={styles.infoBanner}>
+            {pendingAiCount === tasks.length
+              ? 'ИИ готовит тесты — вопросы появятся через несколько секунд. Обновите экран ниже.'
+              : 'Часть тестов ещё готовит ИИ — подождите или обновите список.'}
+          </Text>
+        ) : null}
+        {tasks.length === 0 ? null : (
           tasks.map((task) => {
             const quiz = task.quizData as { questions?: QuizQ[] } | null;
             const q0 = quiz?.questions?.[0];
@@ -121,7 +156,7 @@ export function DailyTasksScreen({ navigation }: Props) {
                     />
                   </>
                 ) : (
-                  <Text style={styles.muted}>Нет вопросов (AI)</Text>
+                  <Text style={styles.infoInline}>ИИ готовит тест… Обновите экран чуть позже.</Text>
                 )}
               </View>
             );
@@ -164,5 +199,16 @@ const makeStyles = (colors: ThemeColors) => StyleSheet.create({
   optSel: { borderWidth: 1, borderColor: colors.accent },
   optText: { color: colors.text },
   muted: { color: colors.textMuted },
+  infoBanner: {
+    color: colors.textMuted,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.cardInset,
+  },
+  infoInline: { color: colors.textMuted, marginTop: spacing.md, lineHeight: 20 },
   err: { color: colors.danger, marginTop: spacing.md },
 });

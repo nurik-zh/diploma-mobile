@@ -3,14 +3,18 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { AppTopBar } from './AppTopBar';
 
 type Props = {
+  /** Заголовок в верхней панели (меню — название — тема). */
   title?: string;
+  /** Показывать кнопку меню (на экране входа — false). По умолчанию true. */
+  showMenu?: boolean;
   children: React.ReactNode;
   loading?: boolean;
 };
 
-export function ScreenScaffold({ title, children, loading }: Props) {
+export function ScreenScaffold({ title, showMenu = true, children, loading }: Props) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
 
@@ -22,6 +26,7 @@ export function ScreenScaffold({ title, children, loading }: Props) {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
+      {title ? <AppTopBar title={title} showMenu={showMenu} /> : null}
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.accent} />
