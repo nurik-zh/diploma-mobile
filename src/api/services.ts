@@ -101,6 +101,13 @@ export async function getVacancyById(id: string): Promise<unknown> {
   return apiRequest(`/api/vacancies/${id}`, { auth: false });
 }
 
+export async function generateVacancyAIPrep(id: string): Promise<unknown> {
+  return apiRequest(`/api/vacancies/${id}/generate-ai-prep`, {
+    method: 'POST',
+    body: {},
+  });
+}
+
 export async function getCommunityPosts(): Promise<CommunityPost[]> {
   return apiRequest<CommunityPost[]>('/api/community', { auth: false });
 }
